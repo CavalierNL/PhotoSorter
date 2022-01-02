@@ -1,0 +1,24 @@
+<Configuration status="warn" name="photoSorterLog" packages="nl.cavaliernl">
+    <Appenders>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout>
+                <Pattern>%d [%-5level] %c{2} – %m%n</Pattern>
+            </PatternLayout>
+        </Console>
+        <File name="fout" fileName="photosorter.log" append="true">
+            <PatternLayout>
+                <Pattern>%d [%-6p] %c{2} - %m%n</Pattern>
+            </PatternLayout>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Logger name="nl.cavaliernl.photosorter" level="info" additivity="false">
+            <AppenderRef ref="stdout" />
+            <AppenderRef ref="fout" />
+        </Logger>
+        <Root level="warn">
+            <AppenderRef ref="stdout" />
+            <AppenderRef ref="fout"/>
+        </Root>
+    </Loggers>
+</Configuration>
