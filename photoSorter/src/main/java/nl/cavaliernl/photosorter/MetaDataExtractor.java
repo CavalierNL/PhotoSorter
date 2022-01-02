@@ -25,11 +25,13 @@ public class MetaDataExtractor {
 
     private static final Pattern PATTERN_DATE_STRIPPED = Pattern.compile(".*([0-9]{8}_[0-9]{6}).*");
     private static final Pattern PATTERN_DATE_DASHED = Pattern.compile(".*([0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}).*");
+    private static final Pattern PATTERN_DATE_DASHED_UNDERSCORE = Pattern.compile(".*([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}).*");
     private static final Pattern PATTERN_DATE_DASHED_DOTTED = Pattern.compile(".*([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}\\.[0-9]{2}\\.[0-9]{2}).*");
     private static final Pattern PATTERN_DATE_TIMESTAMP = Pattern.compile(".*([0-9]{13}).*");
 
     private static final DateTimeFormatter FORMATTER_DATE_STRIPPED = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
     private static final DateTimeFormatter FORMATTER_DATE_DASHED = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
+    private static final DateTimeFormatter FORMATTER_DATE_DASHED_UNDERSCORE = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
     private static final DateTimeFormatter FORMATTER_DATE_DASHED_DOTTED = DateTimeFormatter.ofPattern("yyyy-MM-dd HH.mm.ss");
 
     private MetaDataExtractor() {
@@ -47,12 +49,20 @@ public class MetaDataExtractor {
             detectedBy = "META";
         }
         if (creationDateTime == null) {
-            creationDateTime = getCreationInstantFromCreationTime(path);
-            detectedBy = "CRTD";
-        }
-        if (creationDateTime == null) {
-            creationDateTime = getCreationInstantFromLastModifiedTime(path);
-            detectedBy = "LSTM";
+            LocalDateTime creationTime  = getCreationInstantFromCreationTime(path);
+            LocalDateTime lastModifiedTime = getCreationInstantFromLastModifiedTime(path);
+            if (creationTime != null) {
+                if (lastModifiedTime != null && lastModifiedTime.isBefore(creationTime)) {
+                    creationDateTime = lastModifiedTime;
+                    detectedBy = "LSTM";
+                } else {
+                    creationDateTime = creationTime;
+                    detectedBy = "CRTD";
+                }
+            } else {
+                creationDateTime = lastModifiedTime;
+                detectedBy = "LSTM";
+            }
         }
         if (creationDateTime == null) {
             logger.warn("Could not determine creation time for path: {}", path);
@@ -81,6 +91,11 @@ public class MetaDataExtractor {
         }
 
         instant = checkForFormattedDateTime(filename, PATTERN_DATE_DASHED, FORMATTER_DATE_DASHED);
+        if (instant != null) {
+            return instant;
+        }
+
+        instant = checkForFormattedDateTime(filename, PATTERN_DATE_DASHED_UNDERSCORE, FORMATTER_DATE_DASHED_UNDERSCORE);
         if (instant != null) {
             return instant;
         }
