@@ -40,18 +40,27 @@ public class PhotoSorter implements Callable<Integer> {
     public Integer call() throws Exception {
         Files.walk(sourceFolder.toPath())
                 .filter(path -> !path.getFileName().toString().equals("Thumbs.db"))
-                .forEach(path -> {
-                    if (Files.isRegularFile(path)) {
-                        Path datedTargetFolder = createTargetPath(path);
+                .forEach(originalFile -> {
+                    if (Files.isRegularFile(originalFile)) {
+                        Path datedTargetFolder = createTargetPath(originalFile);
                         logger.debug("Move to: {}", datedTargetFolder);
                         try {
                             if (Files.notExists(datedTargetFolder)) {
                                 Files.createDirectories(datedTargetFolder);
                             }
-                            Path datedTargetFile = Paths.get(datedTargetFolder.toString(), path.getFileName().toString());
-                            Files.move(path, datedTargetFile);
+                            Path datedTargetFile = Paths.get(datedTargetFolder.toString(), originalFile.getFileName().toString());
+                            if (Files.exists(datedTargetFile)) {
+                                long mismatch = Files.mismatch(originalFile, datedTargetFile);
+                                if (mismatch == -1) {
+                                    logger.info("Skipping identical file {} (to {})", originalFile, datedTargetFile);
+                                } else {
+                                    logger.error("Two identically named files found but with different content, starting at byte: {}. Skipping: {}", mismatch, originalFile);
+                                }
+                            } else {
+                                Files.move(originalFile, datedTargetFile);
+                            }
                         } catch (IOException e) {
-                            logger.error("Could not move {} to {}", path, datedTargetFolder, e);
+                            logger.error("Could not move {} to {}", originalFile, datedTargetFolder, e);
                         }
                     }
                 });
