@@ -79,7 +79,7 @@ public class PhotoSorter implements Callable<Integer> {
         String yearFolderName = "" + creationDateTime.getYear();
         String dayFolderName = String.format("%02d-%02d-%02d -", creationDateTime.getYear(), creationDateTime.getMonthValue(), creationDateTime.getDayOfMonth());
 
-        if (cameraName != null) {
+        if (cameraName != null && !cameraName.isBlank()) {
             dayFolderName = String.format("%s %s -", dayFolderName, cameraName);
         }
 
